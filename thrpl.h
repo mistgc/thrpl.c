@@ -53,4 +53,4 @@ int ThreadPool_add_task(ThreadPool *self, Task task);
 int ThreadPool_destroy(ThreadPool *self);
 int ThreadPool_free(ThreadPool *self);
 
-#endif
+#endif // _THREAD_POOL_H_
