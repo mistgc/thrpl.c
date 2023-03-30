@@ -6,7 +6,7 @@
 #define MAX_NUMBER_OF_THREADS 20
 #define MIN_NUMBER_OF_THREADS 4
 #define MAX_NUMBER_OF_TASKS 256
-#define MIN_NUMBER_OF_WAIT_TASKS 5
+// #define MIN_NUMBER_OF_WAIT_TASKS 4
 #define DEFAULT_NUMBER_OF_THREAD 4
 
 typedef void *(*function)(void *);

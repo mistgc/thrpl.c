@@ -5,7 +5,7 @@
 
 void *taskFunc(void *arg) {
   int num = *(int *)arg;
-  printf("[Test] thread %x is working, number = %d\n", (uint)pthread_self(),
+  printf("[Test] thread 0x%x is working, number = %d\n", (uint)pthread_self(),
          num);
   sleep(1);
   free(arg);

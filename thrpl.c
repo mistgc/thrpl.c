@@ -1,5 +1,4 @@
 #include <errno.h>
-#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -14,7 +13,7 @@
 #define GET_TASK_REAR(pool) (pool->task_queue->rear)
 #define DE_QUEUE(pool, out_task) (TaskQueue_dequeue(pool->task_queue, out_task))
 #define EN_QUEUE(pool, task) (TaskQueue_enqueue(pool->task_queue, task))
-#define IS_THREAD_ALIVE(tid) ((pthread_kill(tid, 0)), (errno == ESRCH) ? 0 : 1)
+// #define IS_THREAD_ALIVE(tid) ((pthread_kill(tid, 0) == ESRCH) ? 0 : 1)
 
 TaskQueue *TaskQueue_new() {
   TaskQueue *ret = (TaskQueue *)malloc(sizeof(TaskQueue));
@@ -104,22 +103,30 @@ ThreadPool *ThreadPool_new() {
 
 void *ThreadPool_thread(void *thp) {
   ThreadPool *pool = thp;
+  pthread_t tid = pthread_self();
   Task task;
 
   while (1) {
     pthread_mutex_lock(&pool->mutex);
 
     while (GET_TASK_COUNT(pool) == 0 && (!pool->shutdown)) {
-      printf("[Thread] thread 0x%x is waiting\n", (uint)pthread_self());
+      printf("[Thread] thread 0x%x is waiting\n", (uint)tid);
       pthread_cond_wait(&pool->queue_not_empty, &pool->mutex);
 
       // Thread Suicide
       if (pool->wait_exit_thr_num > 0) {
         pool->wait_exit_thr_num--;
         if (pool->live_thr_num > pool->min_thr_num) {
-          printf("[Thread] thread 0x%x is exiting\n", (uint)pthread_self());
+          printf("[Thread] thread 0x%x is exiting\n", (uint)tid);
           pool->live_thr_num--;
           pthread_mutex_unlock(&pool->mutex);
+          for (int i = 0; i < pool->max_thr_num; i++) {
+              if (pool->threads[i] == tid) {
+                  pthread_detach(tid);
+                  pool->threads[i] = 0;
+                  break;
+              }
+          }
           pthread_exit(NULL);
         }
       }
@@ -193,9 +200,9 @@ void *ThreadPool_admin_thread(void *thp) {
     int busy_thr_num = pool->busy_thr_num;
     pthread_mutex_unlock(&pool->thr_counter);
 
-    printf("[Admin] -[busy-%d]--[live-%d]-\n", busy_thr_num, live_thr_num);
-    if (task_count >= MIN_NUMBER_OF_WAIT_TASKS &&
-        live_thr_num <= pool->max_thr_num) {
+    printf("[Admin] --[busy-%d]--[live-%d]--\n", busy_thr_num, live_thr_num);
+    if (task_count > live_thr_num &&
+        live_thr_num < pool->max_thr_num) {
       printf("[Admin] ----------add----------\n");
 
       // Create A Default Number of Thread
@@ -204,8 +211,7 @@ void *ThreadPool_admin_thread(void *thp) {
            i < pool->max_thr_num && j < DEFAULT_NUMBER_OF_THREAD &&
            pool->live_thr_num < pool->max_thr_num;
            i++) {
-        // int alive = IS_THREAD_ALIVE(pool->threads[i]);
-        if (pool->threads[i] == 0 || !(IS_THREAD_ALIVE(pool->threads[i]))) {
+        if (pool->threads[i] == 0) {
           pthread_create(&pool->threads[i], NULL, ThreadPool_thread,
                          (void *)pool);
           j++;
@@ -242,8 +248,10 @@ int ThreadPool_destroy(ThreadPool *self) {
     pthread_cond_broadcast(&self->queue_not_empty);
   }
 
-  for (int i = 0; i < self->live_thr_num; i++) {
-    pthread_join(self->threads[i], NULL);
+  for (int i = 0; i < self->max_thr_num; i++) {
+      if (self->threads[i] != 0) {
+        pthread_join(self->threads[i], NULL);
+      }
   }
 
   ThreadPool_free(self);
@@ -279,4 +287,4 @@ int ThreadPool_free(ThreadPool *self) {
 #undef GET_TASK_REAR
 #undef DE_QUEUE
 #undef EN_QUEUE
-#undef IS_THREAD_ALIVE
+// #undef IS_THREAD_ALIVE

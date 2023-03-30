@@ -26,10 +26,10 @@ for i in "${!STD_HAEDER_ARRAY[@]}"; do
 done
 sed -i "/^#include.*>\$/a ${STD_HAEDER}" ${PREFIX}/${FILE}
 echo >> ${PREFIX}/${FILE}
-echo "#ifdef THREAD_POOL_IMPLEMENTATION" >> ${PREFIX}/${FILE}
+echo "#ifdef THRPL_IMPLEMENTATION" >> ${PREFIX}/${FILE}
 cat ${FILE_2} | sed "/^#include/d" >> ${PREFIX}/${FILE}
 echo >> ${PREFIX}/${FILE}
-echo "#endif // THREAD_POOL_IMPLEMENTATION" >> ${PREFIX}/${FILE}
+echo "#endif // THRPL_IMPLEMENTATION" >> ${PREFIX}/${FILE}
 cat << EOF >> ${PREFIX}/thrpl.h
 ${FILE_END}
 EOF
