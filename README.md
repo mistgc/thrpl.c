@@ -3,6 +3,20 @@
     <p>An implementation of Thread Pool in C.</p>
 </div>
 
+## Run an example
+
+The thread pool uses POSIX threads, so compile using the `-lpthread` flag.
+
+```bash
+gcc example.c thrpl.c -lpthread -o example && ./example
+```
+
+Debug mode:
+
+```bash
+gcc example.c thrpl.c -lpthread -DTHRPL_DEBUG -o example && ./example
+```
+
 ## Usage
 
 ```bash
@@ -25,6 +39,23 @@ Don't forget to put `#define THRPL_IMLEMENTATION` in your file before including 
 #define THRPL_IMLEMENTATION
 
 #include "thrpl.h" // header-only file
+```
+
+## Api
+
+| Function | Description |
+|---|---|
+| ThreadPool *ThreadPool_new() | Create a new thread pool and return a pointer to it. |
+| int ThreadPool_add_task(ThreadPool *self, Task task) | Add a task to the thread pool. |
+| int ThreadPool_destroy(ThreadPool *self) | Destroy the thread pool. |
+
+```c
+typedef void *(*function)(void *);
+
+typedef struct {
+  function func;
+  void *argv;
+} Task;
 ```
 
 ## License
