@@ -1,3 +1,6 @@
+// #define THRPL_IMPLEMENTATION
+
+// #include "header-only/thrpl.h"
 #include "thrpl.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,7 +39,7 @@ int main() {
     ThreadPool_add_task(pool, task);
   }
 
-  sleep(30);
+  sleep(20);
 
   ThreadPool_destroy(pool);
 

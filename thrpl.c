@@ -30,11 +30,15 @@ TaskQueue *TaskQueue_new() {
 
 int TaskQueue_enqueue(TaskQueue *self, Task task) {
   if (self == NULL) {
+#ifdef THRPL_DEBUG
     fprintf(stderr, "[Error] The pointer to task queue is invalid.\n");
+#endif // THRPL_DEBUG
     return -1;
   }
   if ((self->rear + 1) % self->size == self->head) {
+#ifdef THRPL_DEBUG
     fprintf(stderr, "[Error] Task queue is full, can not add a new task.\n");
+#endif // THRPL_DEBUG
     return -1;
   }
   self->rear = (self->rear + 1) % self->size;
@@ -45,11 +49,15 @@ int TaskQueue_enqueue(TaskQueue *self, Task task) {
 
 int TaskQueue_dequeue(TaskQueue *self, Task *out_task) {
   if (self == NULL) {
+#ifdef THRPL_DEBUG
     fprintf(stderr, "[Error] The pointer to task queue is invalid.\n");
+#endif // THRPL_DEBUG
     return -1;
   }
   if (self->head == self->rear) {
+#ifdef THRPL_DEBUG
     fprintf(stderr, "[Error] Task queue is empty, can not remove a task.\n");
+#endif // THRPL_DEBUG
     return -1;
   }
   self->head = (self->head + 1) % self->size;
@@ -68,7 +76,9 @@ void TaskQueue_free(TaskQueue *self) {
 ThreadPool *ThreadPool_new() {
   ThreadPool *pool = NULL;
   if ((pool = (ThreadPool *)malloc(sizeof(ThreadPool))) == NULL) {
+#ifdef THRPL_DEBUG
     fprintf(stderr, "[Error] malloc thread pool failed!");
+#endif // THRPL_DEBUG
     perror("malloc");
     return NULL;
   }
@@ -93,7 +103,9 @@ ThreadPool *ThreadPool_new() {
 
   for (int i = 0; i < pool->min_thr_num; i++) {
     pthread_create(&pool->threads[i], NULL, ThreadPool_thread, (void *)pool);
+#ifdef THRPL_DEBUG
     printf("[Thread Pool] start thread 0x%x...\n", (uint)pool->threads[i]);
+#endif // THRPL_DEBUG
   }
 
   pthread_create(&pool->admin_tid, NULL, ThreadPool_admin_thread, (void *)pool);
@@ -110,22 +122,26 @@ void *ThreadPool_thread(void *thp) {
     pthread_mutex_lock(&pool->mutex);
 
     while (GET_TASK_COUNT(pool) == 0 && (!pool->shutdown)) {
+#ifdef THRPL_DEBUG
       printf("[Thread] thread 0x%x is waiting\n", (uint)tid);
+#endif // THRPL_DEBUG
       pthread_cond_wait(&pool->queue_not_empty, &pool->mutex);
 
       // Thread Suicide
       if (pool->wait_exit_thr_num > 0) {
         pool->wait_exit_thr_num--;
         if (pool->live_thr_num > pool->min_thr_num) {
+#ifdef THRPL_DEBUG
           printf("[Thread] thread 0x%x is exiting\n", (uint)tid);
+#endif // THRPL_DEBUG
           pool->live_thr_num--;
           pthread_mutex_unlock(&pool->mutex);
           for (int i = 0; i < pool->max_thr_num; i++) {
-              if (pool->threads[i] == tid) {
-                  pthread_detach(tid);
-                  pool->threads[i] = 0;
-                  break;
-              }
+            if (pool->threads[i] == tid) {
+              pthread_detach(tid);
+              pool->threads[i] = 0;
+              break;
+            }
           }
           pthread_exit(NULL);
         }
@@ -135,7 +151,9 @@ void *ThreadPool_thread(void *thp) {
     // Thread Pool Has Shut Down.
     if (pool->shutdown) {
       pthread_mutex_unlock(&pool->mutex);
-      printf("[Thread] thread 0x%x is exiting\n", (uint)pthread_self());
+#ifdef THRPL_DEBUG
+      printf("[Thread] thread 0x%x is exiting\n", (uint)tid);
+#endif // THRPL_DEBUG
       pthread_exit(NULL);
     }
 
@@ -144,7 +162,9 @@ void *ThreadPool_thread(void *thp) {
     pthread_cond_broadcast(&pool->queue_not_full);
     // Unlock Mutex
     pthread_mutex_unlock(&pool->mutex);
-    printf("[Thread] thread 0x%x start working\n", (uint)pthread_self());
+#ifdef THRPL_DEBUG
+    printf("[Thread] thread 0x%x start working\n", (uint)tid);
+#endif // THRPL_DEBUG
     pthread_mutex_lock(&pool->thr_counter);
     pool->busy_thr_num++;
     pthread_mutex_unlock(&pool->thr_counter);
@@ -153,7 +173,9 @@ void *ThreadPool_thread(void *thp) {
     task.func(task.argv);
 
     // After Finished Task
-    printf("[Thread] thread 0x%x end working\n", (uint)pthread_self());
+#ifdef THRPL_DEBUG
+    printf("[Thread] thread 0x%x end working\n", (uint)tid);
+#endif // THRPL_DEBUG
     pthread_mutex_lock(&pool->thr_counter);
     pool->busy_thr_num--;
     pthread_mutex_unlock(&pool->thr_counter);
@@ -200,10 +222,13 @@ void *ThreadPool_admin_thread(void *thp) {
     int busy_thr_num = pool->busy_thr_num;
     pthread_mutex_unlock(&pool->thr_counter);
 
+#ifdef THRPL_DEBUG
     printf("[Admin] --[busy-%d]--[live-%d]--\n", busy_thr_num, live_thr_num);
-    if (task_count > live_thr_num &&
-        live_thr_num < pool->max_thr_num) {
+#endif // THRPL_DEBUG
+    if (task_count > live_thr_num && live_thr_num < pool->max_thr_num) {
+#ifdef THRPL_DEBUG
       printf("[Admin] ----------add----------\n");
+#endif // THRPL_DEBUG
 
       // Create A Default Number of Thread
       pthread_mutex_lock(&pool->mutex);
@@ -216,7 +241,9 @@ void *ThreadPool_admin_thread(void *thp) {
                          (void *)pool);
           j++;
           pool->live_thr_num++;
+#ifdef THRPL_DEBUG
           printf("[Admin] -------new thread------\n");
+#endif // THRPL_DEBUG
         }
       }
       pthread_mutex_unlock(&pool->mutex);
@@ -229,7 +256,9 @@ void *ThreadPool_admin_thread(void *thp) {
 
       for (int i = 0; i < DEFAULT_NUMBER_OF_THREAD; i++) {
         pthread_cond_signal(&pool->queue_not_empty);
+#ifdef THRPL_DEBUG
         printf("[Admin] ----------clear--------\n");
+#endif // THRPL_DEBUG
       }
     }
   }
@@ -249,9 +278,9 @@ int ThreadPool_destroy(ThreadPool *self) {
   }
 
   for (int i = 0; i < self->max_thr_num; i++) {
-      if (self->threads[i] != 0) {
-        pthread_join(self->threads[i], NULL);
-      }
+    if (self->threads[i] != 0) {
+      pthread_join(self->threads[i], NULL);
+    }
   }
 
   ThreadPool_free(self);
