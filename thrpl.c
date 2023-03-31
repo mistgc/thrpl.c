@@ -48,7 +48,7 @@ int TaskQueue_enqueue(TaskQueue *self, Task task) {
 }
 
 int TaskQueue_dequeue(TaskQueue *self, Task *out_task) {
-  if (self == NULL) {
+  if (NULL == self) {
 #ifdef THRPL_DEBUG
     fprintf(stderr, "[Error] The pointer to task queue is invalid.\n");
 #endif // THRPL_DEBUG
@@ -67,7 +67,7 @@ int TaskQueue_dequeue(TaskQueue *self, Task *out_task) {
 }
 
 void TaskQueue_free(TaskQueue *self) {
-  if (self != NULL) {
+  if (NULL != self) {
     free(self->tasks);
     free(self);
   }
@@ -75,7 +75,7 @@ void TaskQueue_free(TaskQueue *self) {
 
 ThreadPool *ThreadPool_new() {
   ThreadPool *pool = NULL;
-  if ((pool = (ThreadPool *)malloc(sizeof(ThreadPool))) == NULL) {
+  if (NULL == (pool = (ThreadPool *)malloc(sizeof(ThreadPool)))) {
 #ifdef THRPL_DEBUG
     fprintf(stderr, "[Error] malloc thread pool failed!");
 #endif // THRPL_DEBUG
@@ -94,10 +94,10 @@ ThreadPool *ThreadPool_new() {
       .shutdown = 0,
   };
 
-  if (pthread_mutex_init(&pool->mutex, NULL) != 0 ||
-      pthread_mutex_init(&pool->thr_counter, NULL) != 0 ||
-      pthread_cond_init(&pool->queue_not_full, NULL) != 0 ||
-      pthread_cond_init(&pool->queue_not_empty, NULL) != 0) {
+  if (0 != pthread_mutex_init(&pool->mutex, NULL) ||
+      0 != pthread_mutex_init(&pool->thr_counter, NULL) ||
+      0 != pthread_cond_init(&pool->queue_not_full, NULL) ||
+      0 != pthread_cond_init(&pool->queue_not_empty, NULL)) {
     perror("pthread_mutex_init");
   }
 
@@ -267,7 +267,7 @@ void *ThreadPool_admin_thread(void *thp) {
 }
 
 int ThreadPool_destroy(ThreadPool *self) {
-  if (self == NULL) {
+  if (NULL == self) {
     return -1;
   }
   self->shutdown = 1;
@@ -289,7 +289,7 @@ int ThreadPool_destroy(ThreadPool *self) {
 }
 
 int ThreadPool_free(ThreadPool *self) {
-  if (self == NULL) {
+  if (NULL == self) {
     return -1;
   }
   if (self->task_queue) {
