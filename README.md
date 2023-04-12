@@ -47,6 +47,7 @@ Don't forget to put `#define THRPL_IMLEMENTATION` in your file before including 
 |---|---|
 | ThreadPool *ThreadPool_new() | Create a new thread pool and return a pointer to it. |
 | int ThreadPool_add_task(ThreadPool *self, Task task) | Add a task to the thread pool. |
+| int ThreadPool_gracefully_destroy(ThreadPool *self) | Destroy the thread pool when the task queue is empty. |
 | int ThreadPool_destroy(ThreadPool *self) | Destroy the thread pool. |
 
 ```c

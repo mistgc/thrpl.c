@@ -185,6 +185,10 @@ void *ThreadPool_thread(void *thp) {
 }
 
 int ThreadPool_add_task(ThreadPool *self, Task task) {
+  if (self->graceful_shutdown) {
+    return -1;
+  }
+
   pthread_mutex_lock(&self->mutex);
 
   while (GET_TASK_COUNT(self) == GET_TASK_SIZE(self) && !self->shutdown) {
@@ -284,6 +288,23 @@ int ThreadPool_destroy(ThreadPool *self) {
   }
 
   ThreadPool_free(self);
+
+  return 0;
+}
+
+int ThreadPool_gracefully_destroy(ThreadPool *self) {
+  if (NULL == self) {
+    return -1;
+  }
+  pthread_mutex_lock(&self->mutex);
+
+  while (GET_TASK_COUNT(self)) {
+    pthread_cond_wait(&self->queue_not_full, &self->mutex);
+  }
+
+  pthread_mutex_unlock(&self->mutex);
+
+  ThreadPool_destroy(self);
 
   return 0;
 }

@@ -18,30 +18,34 @@ void *taskFunc(void *arg) {
 int main() {
   ThreadPool *pool = ThreadPool_new();
   for (int i = 0; i < 100; ++i) {
+    int ret = 0;
     int *num = (int *)malloc(sizeof(int));
     *num = i + 100;
     Task task = {
         .func = taskFunc,
         .argv = num,
     };
-    ThreadPool_add_task(pool, task);
+    if (-1 == (ret = ThreadPool_add_task(pool, task))) {
+      free(num);
+    }
   }
 
   sleep(20);
 
   for (int i = 0; i < 100; ++i) {
+    int ret = 0;
     int *num = (int *)malloc(sizeof(int));
     *num = i + 1000;
     Task task = {
         .func = taskFunc,
         .argv = num,
     };
-    ThreadPool_add_task(pool, task);
+    if (-1 == (ret = ThreadPool_add_task(pool, task))) {
+      free(num);
+    }
   }
 
-  sleep(20);
-
-  ThreadPool_destroy(pool);
+  ThreadPool_gracefully_destroy(pool);
 
   return 0;
 }

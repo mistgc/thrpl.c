@@ -31,7 +31,7 @@ int TaskQueue_dequeue(TaskQueue *self, Task *out_task);
 typedef struct {
   TaskQueue *task_queue;
   pthread_mutex_t mutex;
-  pthread_mutex_t thr_counter;
+  pthread_mutex_t thr_counter; // Guarder for ThreadPool.busy_thr_num
   pthread_cond_t queue_not_full;
   pthread_cond_t queue_not_empty;
 
@@ -44,6 +44,7 @@ typedef struct {
   size_t wait_exit_thr_num;
 
   int shutdown;
+  int graceful_shutdown;
 } ThreadPool;
 
 ThreadPool *ThreadPool_new();
@@ -51,6 +52,7 @@ void *ThreadPool_thread(void *thp);
 void *ThreadPool_admin_thread(void *thp);
 int ThreadPool_add_task(ThreadPool *self, Task task);
 int ThreadPool_destroy(ThreadPool *self);
+int ThreadPool_gracefully_destroy(ThreadPool *self);
 int ThreadPool_free(ThreadPool *self);
 
 #endif // _THREAD_POOL_H_
